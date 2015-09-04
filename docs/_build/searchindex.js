@@ -1,0 +1,1 @@
+Search.setIndex({envversion:46,filenames:["index"],objects:{"":{py2py:[0,0,0,"-"]}},objnames:{"0":["py","module","Python module"]},objtypes:{"0":"py:module"},terms:{content:0,index:0,modul:0,page:0,search:0},titles:["Welcome to py2py&#8217;s documentation!"],titleterms:{document:0,indic:0,py2pi:0,tabl:0,welcom:0}})
