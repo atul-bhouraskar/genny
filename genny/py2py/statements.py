@@ -17,7 +17,7 @@ class Assign(Renderable):
     def render_to_list(self, render_list, indent_level):
         base.render_item(self.lhs, render_list, indent_level)
         render_list.append(' = ')
-        base.render_item(self.rhs, render_list, indent_level)
+        base.render_item(self.rhs, render_list, indent_level=0)
         render_list.append(base.BLOCK_STATEMENT_EOS)
 
 
