@@ -1,3 +1,4 @@
+import six
 
 INDENT = ' ' * 4  # 4 spaces
 
@@ -150,7 +151,7 @@ class Suite(Renderable):
         elif isinstance(statement, CompoundStatement):
             # A suite can only be rendered inline if all statements are simple
             self.render_inline = False
-        else:  # assume string, convert to SimpleStatement
+        elif isinstance(statement, six.string_types):
             statement = SimpleStatement(statement)
 
         self.statements.append(statement)
@@ -193,3 +194,12 @@ def do_indent(text, indent_level):
         return INDENT * indent_level + text
     else:
         return text
+
+
+def render_item(item, render_list, indent_level):
+    if isinstance(item, six.string_types):
+        render_list.append(do_indent(item, indent_level))
+    elif hasattr(item, 'render_to_list'):
+        item.render_to_list(render_list, indent_level)
+    else:
+        render_list.append(do_indent(str(item), indent_level))
