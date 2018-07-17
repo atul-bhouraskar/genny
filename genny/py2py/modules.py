@@ -1,4 +1,5 @@
 from .base import Suite
+import base
 import os
 
 
@@ -44,6 +45,8 @@ class Module(Suite):
         if self.sort_imports:
             self.imports = sorted(self.imports)
         render_list.extend(self.imports)
+        if self.imports:
+            render_list.append(base.BLOCK_STATEMENT_EOS)
 
         super(Module, self).render_to_list(render_list,
                                            indent_level=indent_level)

@@ -1,6 +1,24 @@
-from .base import Clause, CompoundStatement, Py2PyException, Suite
+from .base import Clause, CompoundStatement, Py2PyException, Renderable, Suite
+import base
 
 __all__ = ('IfStatement', 'WhileStatement', 'ForStatement', 'TryStatement')
+
+
+class BlankLine(Renderable):
+    def render_to_list(self, render_list, indent_level):
+        render_list.append(base.BLOCK_STATEMENT_EOS)
+
+
+class Assign(Renderable):
+    def __init__(self, lhs, rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def render_to_list(self, render_list, indent_level):
+        base.render_item(self.lhs, render_list, indent_level)
+        render_list.append(' = ')
+        base.render_item(self.rhs, render_list, indent_level)
+        render_list.append(base.BLOCK_STATEMENT_EOS)
 
 
 class IfStatement(CompoundStatement):
@@ -279,11 +297,12 @@ class ClassStatement(CompoundStatement):
 
     def render_to_list(self, render_list, indent_level):
         base_part = ('(%s)' % ','.join(self.bases)) if self.bases else ''
-        print 'base_part', base_part
         content = '%s%s' % (self.name, base_part)
-        print self.name, 'content', content
         self.clause.header.set_content(content)
         self.clause.render_to_list(render_list, indent_level=indent_level)
+        render_list.append(base.BLOCK_STATEMENT_EOS)
+        render_list.append(base.BLOCK_STATEMENT_EOS)
+
 
 Suite.class_ = lambda self, name, bases=None, old_style=False, decorators=None: \
     self.add(ClassStatement(name, bases=bases, old_style=old_style,
