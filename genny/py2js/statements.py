@@ -373,6 +373,29 @@ class ObjectLiteral(base.Renderable):
         render_list.append('}', add_eos=self.add_eos, add_eol=self.add_eol)
 
 
+class ArrayLiteral(base.Renderable):
+    def __init__(self, add_eos=True, add_eol=True):
+        super(ArrayLiteral, self).__init__()
+        self.add_eos = add_eos
+        self.add_eol = add_eol
+        self.elements = []
+
+    def add_element(self, element):
+        self.elements.append(element)
+
+    def render_to_list(self, render_list, do_indent=False):
+        render_list.append('[\n', do_indent=False)
+        with render_list.indent_block():
+            for element in self.elements:  # type: base.Renderable
+                if not hasattr(element, 'render_to_list'):
+                    element = base.SimpleStatement(element, add_eos=False,
+                                                   add_eol=False)
+                element.render_to_list(render_list, do_indent=False)
+                render_list.append(',', do_indent=False, add_eol=False)
+
+        render_list.append(']', add_eos=self.add_eos, add_eol=self.add_eol)
+
+
 class Return(base.Statement):
     def __init__(self, value, add_eos=True, add_eol=True):
         self.value = value

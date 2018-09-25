@@ -63,7 +63,7 @@ class Statement(Renderable):
 
 class SimpleStatement(Statement):
     def __init__(self, text, add_eos=True, add_eol=True):
-        self.text = text
+        self.text = str(text)
         self.add_eos = add_eos
         self.add_eol = add_eol
         super(SimpleStatement, self).__init__()
@@ -189,7 +189,12 @@ class BlockStatement(Statement):
 
 
 def quote_text(text, quote_char="'"):
-    return quote_char + text + quote_char
+    # return quote_char + text + quote_char
+    escaped = repr(text)  # returns u"text\'s representation"
+    if escaped[0] == 'u':
+        return escaped[1:]
+    else:
+        return escaped
 
 
 def render_item(item, render_list, do_indent):

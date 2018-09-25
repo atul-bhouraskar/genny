@@ -52,4 +52,4 @@ class JSFile(base.CodeFragment):
 
     def save(self, path):
         with open(path, 'w') as f:
-            f.write(self.render())
+            f.write(self.render().encode('utf-8'))
