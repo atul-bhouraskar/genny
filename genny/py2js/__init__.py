@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from .base import BlankLine, quote_text
+from .base import BlankLine, make_bool, quote_text
 
 from .statements import (
     ArrayLiteral,

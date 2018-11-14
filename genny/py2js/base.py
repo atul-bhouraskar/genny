@@ -197,6 +197,10 @@ def quote_text(text, quote_char="'"):
         return escaped
 
 
+def make_bool(value):
+    return 'true' if value else 'false'
+
+
 def render_item(item, render_list, do_indent):
     if isinstance(item, six.string_types):
         render_list.append(item, do_indent=do_indent)
