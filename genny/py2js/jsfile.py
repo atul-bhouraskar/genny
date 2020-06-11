@@ -51,5 +51,5 @@ class JSFile(base.CodeFragment):
         super(JSFile, self).render_to_list(render_list)
 
     def save(self, path):
-        with open(path, 'w') as f:
+        with open(path, 'wb') as f:
             f.write(self.render().encode('utf-8'))
