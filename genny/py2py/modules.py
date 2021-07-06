@@ -1,5 +1,5 @@
 from .base import Suite
-import base
+from . import base
 import os
 
 
@@ -33,7 +33,7 @@ class Module(Suite):
         return self
 
     def set_encoding(self, encoding):
-        self.encoding = '# -*- coding: %s -*-\n' % encoding
+        self.encoding = f'# -*- coding: {encoding} -*-\n'
         return self
 
     def render_to_list(self, render_list, indent_level):
@@ -48,8 +48,7 @@ class Module(Suite):
         if self.imports:
             render_list.append(base.BLOCK_STATEMENT_EOS)
 
-        super(Module, self).render_to_list(render_list,
-                                           indent_level=indent_level)
+        super().render_to_list(render_list, indent_level=indent_level)
 
     def save(self, dir_name):
         file_name = os.path.join(dir_name, self.name + '.py')

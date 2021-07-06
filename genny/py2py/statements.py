@@ -1,7 +1,5 @@
 from .base import Clause, CompoundStatement, Py2PyException, Renderable, Suite
-import base
-
-__all__ = ('IfStatement', 'WhileStatement', 'ForStatement', 'TryStatement')
+from . import base
 
 
 class BlankLine(Renderable):
@@ -53,7 +51,7 @@ class IfStatement(CompoundStatement):
                              },
                              render_inline=self.render_inline)
         self.elif_clauses.append(elif_clause)
-        print 'elif returning', elif_clause
+        print('elif returning', elif_clause)
         return elif_clause
 
     def else_(self):
@@ -124,7 +122,7 @@ class ForStatement(CompoundStatement):
 
         self.for_clause = Clause(
             'for',
-            content='%s in %s' % (target_list, in_),
+            content=f'{target_list} in {in_}',
             parent=parent,
             proxy_methods={
                 'else_': self.else_
@@ -239,12 +237,13 @@ class WithStatement(CompoundStatement):
 
     @staticmethod
     def _render_item(item):
-        return '%s as %s' % (item[0], item[1]) if item[1] else item[0]
+        return f'{item[0]} as {item[1]}' if item[1] else item[0]
 
     def render_to_list(self, render_list, indent_level):
         rendered_items = ', '.join([self._render_item(x) for x in self.items])
         self.clause.header.set_content(rendered_items)
         self.clause.render_to_list(render_list, indent_level=indent_level)
+
 
 Suite.with_ = lambda self, expression, as_=None: \
     self.add(WithStatement(expression, as_=as_, parent=self))
@@ -267,9 +266,11 @@ class DefStatement(CompoundStatement):
         return self
 
     def render_to_list(self, render_list, indent_level):
-        func_str = '%s(%s)' % (self.name, ', '.join(self.parameter_list))
+        params = ', '.join(self.parameter_list)
+        func_str = f'{self.name}({params})'
         self.clause.header.set_content(func_str)
         self.clause.render_to_list(render_list, indent_level=indent_level)
+
 
 Suite.def_ = lambda self, name, parameter_list=None, decorators=None: \
     self.add(DefStatement(name, parameter_list=parameter_list,
@@ -277,12 +278,10 @@ Suite.def_ = lambda self, name, parameter_list=None, decorators=None: \
 
 
 class ClassStatement(CompoundStatement):
-    def __init__(self, name, bases=None, old_style=False, decorators=None,
+    def __init__(self, name, bases=None, decorators=None,
                  parent=None,
                  render_inline=None):
         self.name = name
-        if not bases and not old_style:
-            bases = ['object']
         self.bases = bases
         if not parent:
             raise Py2PyException('Class definition requires parent')
@@ -296,15 +295,15 @@ class ClassStatement(CompoundStatement):
         return self
 
     def render_to_list(self, render_list, indent_level):
-        base_part = ('(%s)' % ','.join(self.bases)) if self.bases else ''
-        content = '%s%s' % (self.name, base_part)
+        base_part = '({})'.format(','.join(self.bases)) if self.bases else ''
+        content = f'{self.name}{base_part}'
         self.clause.header.set_content(content)
         self.clause.render_to_list(render_list, indent_level=indent_level)
         render_list.append(base.BLOCK_STATEMENT_EOS)
         render_list.append(base.BLOCK_STATEMENT_EOS)
 
 
-Suite.class_ = lambda self, name, bases=None, old_style=False, decorators=None: \
-    self.add(ClassStatement(name, bases=bases, old_style=old_style,
+Suite.class_ = lambda self, name, bases=None, decorators=None: \
+    self.add(ClassStatement(name, bases=bases,
                             decorators=decorators,
                             parent=self))

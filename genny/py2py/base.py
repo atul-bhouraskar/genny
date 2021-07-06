@@ -1,5 +1,3 @@
-import six
-
 INDENT = ' ' * 4  # 4 spaces
 
 CAN_RENDER_SUITES_INLINE = False
@@ -11,7 +9,7 @@ class Py2PyException(Exception):
     pass
 
 
-class Expression(object):
+class Expression:
     def __init__(self, text):
         self.text = text
 
@@ -65,7 +63,7 @@ class Clause(Renderable):
     def __getattr__(self, item):
         if self.proxy_methods:
             try:
-                print 'Clause Proxy - ', item, self.proxy_methods
+                print('Clause Proxy - ', item, self.proxy_methods)
                 return self.proxy_methods[item]
             except KeyError:
                 raise AttributeError()
@@ -82,7 +80,7 @@ class Clause(Renderable):
             return
 
         prefix = '@' if d[0] != '@' else ''
-        return '%s%s\n' % (prefix, d)
+        return f'{prefix}{d}\n'
 
     def render_to_list(self, render_list, indent_level):
         if self.suite.render_inline:
@@ -106,7 +104,7 @@ class ClauseHeader(Renderable):
     def render_to_list(self, render_list, indent_level):
         return render_list.append(
             do_indent(
-                '%s%s:%s' % (self.keyword, self.content, self.eos),
+                f'{self.keyword}{self.content}:{self.eos}',
                 indent_level=indent_level))
 
 
@@ -135,7 +133,7 @@ class Suite(Renderable):
     def __getattr__(self, item):
         if self.proxy_methods:
             try:
-                print 'Suite Proxy - ', item, self.proxy_methods
+                print('Suite Proxy - ', item, self.proxy_methods)
                 return self.proxy_methods[item]
             except KeyError:
                 pass
@@ -151,7 +149,7 @@ class Suite(Renderable):
         elif isinstance(statement, CompoundStatement):
             # A suite can only be rendered inline if all statements are simple
             self.render_inline = False
-        elif isinstance(statement, six.string_types):
+        elif isinstance(statement, str):
             statement = SimpleStatement(statement)
 
         self.statements.append(statement)
@@ -186,7 +184,7 @@ class Suite(Renderable):
 
 class SimpleAssignmentStatement(SimpleStatement):
     def __init__(self, lhs, rhs):
-        super(SimpleAssignmentStatement, self).__init__('%s = %s' % (lhs, rhs))
+        super(SimpleAssignmentStatement, self).__init__(f'{lhs} = {rhs}')
 
 
 def do_indent(text, indent_level):
@@ -197,7 +195,7 @@ def do_indent(text, indent_level):
 
 
 def render_item(item, render_list, indent_level):
-    if isinstance(item, six.string_types):
+    if isinstance(item, str):
         render_list.append(do_indent(item, indent_level))
     elif hasattr(item, 'render_to_list'):
         item.render_to_list(render_list, indent_level)

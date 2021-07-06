@@ -29,6 +29,3 @@ class Package(object):
         self.init_module.save(package_path)
         for module in self.modules:
             module.save(package_path)
-
-if __name__ == '__main__':
-    pass
