@@ -13,9 +13,9 @@ class Assign(Renderable):
         self.rhs = rhs
 
     def render_to_list(self, render_list, indent_level):
-        base.render_item(self.lhs, render_list, indent_level)
+        base.render_item_to_list(self.lhs, render_list, indent_level)
         render_list.append(' = ')
-        base.render_item(self.rhs, render_list, indent_level=0)
+        base.render_item_to_list(self.rhs, render_list, indent_level=0)
         render_list.append(base.BLOCK_STATEMENT_EOS)
 
 
@@ -307,3 +307,28 @@ Suite.class_ = lambda self, name, bases=None, decorators=None: \
     self.add(ClassStatement(name, bases=bases,
                             decorators=decorators,
                             parent=self))
+
+
+class FunctionCall(Renderable):
+    def __init__(self, function_name, *args, **kwargs):
+        self.function_name = function_name
+        self.args = args
+        self.kwargs = kwargs
+
+    def render_to_list(self, render_list, indent_level):
+        render_list.append(base.do_indent(self.function_name, indent_level))
+        render_list.append('(')
+        for arg in self.args:
+            base.render_item_to_list(arg, render_list, indent_level=0)
+            render_list.append(', ')
+
+        for key, value in self.kwargs.items():
+            render_list.append(f'{key}=')
+            base.render_item_to_list(value, render_list, indent_level=0)
+            render_list.append(', ')
+        render_list.pop()
+        render_list.append(')')
+
+
+Suite.call_ = lambda self, function_name, *args, **kwargs: \
+    self.add(FunctionCall(function_name, *args, **kwargs))

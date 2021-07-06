@@ -63,7 +63,6 @@ class Clause(Renderable):
     def __getattr__(self, item):
         if self.proxy_methods:
             try:
-                print('Clause Proxy - ', item, self.proxy_methods)
                 return self.proxy_methods[item]
             except KeyError:
                 raise AttributeError()
@@ -133,7 +132,6 @@ class Suite(Renderable):
     def __getattr__(self, item):
         if self.proxy_methods:
             try:
-                print('Suite Proxy - ', item, self.proxy_methods)
                 return self.proxy_methods[item]
             except KeyError:
                 pass
@@ -194,10 +192,20 @@ def do_indent(text, indent_level):
         return text
 
 
-def render_item(item, render_list, indent_level):
+def render_item_to_list(item, render_list, indent_level):
     if isinstance(item, str):
         render_list.append(do_indent(item, indent_level))
     elif hasattr(item, 'render_to_list'):
         item.render_to_list(render_list, indent_level)
     else:
         render_list.append(do_indent(str(item), indent_level))
+
+
+def render_item(item):
+    if isinstance(item, str):
+        return item
+    if hasattr(item, 'render_to_list'):
+        render_list = []
+        item.render_to_list(render_list)
+        return ''.join(render_list)
+    return str(item)
