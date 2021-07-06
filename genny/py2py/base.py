@@ -85,7 +85,9 @@ class Clause(Renderable):
         if self.suite.render_inline:
             self.header.eos = ''
         for d in self.decorators:
-            render_list.append(self.render_decorator(d))
+            render_list.append(
+                do_indent(self.render_decorator(d), indent_level)
+            )
         self.header.render_to_list(render_list, indent_level)
         self.suite.render_to_list(render_list, indent_level+1)
 

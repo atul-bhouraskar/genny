@@ -294,6 +294,40 @@ class ClassStatement(CompoundStatement):
         self.clause.write(statement)
         return self
 
+    def add_method(self, name, parameter_list=None, decorators=None):
+        if parameter_list is None:
+            parameter_list = []
+        parameter_list.insert(0, 'self')
+
+        return self.add_method_(name, parameter_list, decorators)
+
+    def add_class_method(self, name, parameter_list=None, decorators=None):
+        if parameter_list is None:
+            parameter_list = []
+        parameter_list.insert(0, 'cls')
+
+        if decorators is None:
+            decorators = []
+        decorators.append('classmethod')
+
+        return self.add_method_(name, parameter_list, decorators)
+
+    def add_static_method(self, name, parameter_list=None, decorators=None):
+        if parameter_list is None:
+            parameter_list = []
+
+        if decorators is None:
+            decorators = []
+        decorators.append('staticmethod')
+
+        return self.add_method_(name, parameter_list, decorators)
+
+    def add_method_(self, name, parameter_list, decorators=None):
+        statement = DefStatement(name, parameter_list, decorators,
+                                 parent=self.clause)
+        self.write(statement)
+        return statement
+
     def render_to_list(self, render_list, indent_level):
         base_part = '({})'.format(','.join(self.bases)) if self.bases else ''
         content = f'{self.name}{base_part}'
