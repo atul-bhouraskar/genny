@@ -11,6 +11,7 @@ class Assign(Renderable):
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+        super().__init__()
 
     def render_to_list(self, render_list, indent_level):
         base.render_item_to_list(self.lhs, render_list, indent_level)
@@ -20,24 +21,20 @@ class Assign(Renderable):
 
 
 class IfStatement(CompoundStatement):
-    def __init__(self, expression, parent, render_inline=None):
+    def __init__(self, expression, parent):
         super(IfStatement, self).__init__(parent)
-        self.render_inline = render_inline
         self.expression = expression
         self.if_clause = Clause('if', content=expression,
                                 parent=parent,
                                 proxy_methods={
                                     'elif_': self.elif_,
                                     'else_': self.else_
-                                },
-                                render_inline=render_inline)
+                                })
         self.elif_clauses = []
         self.else_clause = None
 
-    def __getattr__(self, item):
-        if item[-1] == '_':
-            return getattr(self.if_clause.suite, item)
-        raise AttributeError(item)
+    def get_clause(self) -> Clause:
+        return self.if_clause
 
     def write(self, statement):
         return self.if_clause.write(statement)
@@ -48,16 +45,14 @@ class IfStatement(CompoundStatement):
                              proxy_methods={
                                  'elif_': self.elif_,
                                  'else_': self.else_
-                             },
-                             render_inline=self.render_inline)
+                             })
         self.elif_clauses.append(elif_clause)
         print('elif returning', elif_clause)
         return elif_clause
 
     def else_(self):
         if not self.else_clause:
-            self.else_clause = Clause('else', parent=self,
-                                      render_inline=self.render_inline)
+            self.else_clause = Clause('else', parent=self)
             return self.else_clause
         else:
             raise Py2PyException('Only one "else" clause permitted in '
@@ -71,24 +66,21 @@ class IfStatement(CompoundStatement):
             self.else_clause.render_to_list(render_list, indent_level)
 
 
-Suite.if_ = lambda self, expression: \
-    self.add(IfStatement(expression, parent=self))
-
-
 class WhileStatement(CompoundStatement):
-    def __init__(self, expression, parent, render_inline=None):
+    def __init__(self, expression, parent):
         super(WhileStatement, self).__init__(parent)
         self.expression = expression
-        self.render_inline = render_inline
 
         self.while_clause = Clause('while', content=expression,
                                    parent=parent,
                                    proxy_methods={
                                        'else_': self.else_
-                                   },
-                                   render_inline=render_inline)
+                                   })
 
         self.else_clause = None
+
+    def get_clause(self) -> Clause:
+        return self.while_clause
 
     def write(self, statement):
         self.while_clause.write(statement)
@@ -96,8 +88,7 @@ class WhileStatement(CompoundStatement):
 
     def else_(self):
         if not self.else_clause:
-            self.else_clause = Clause('else', parent=self,
-                                      render_inline=self.render_inline)
+            self.else_clause = Clause('else', parent=self)
             return self.else_clause
         else:
             raise Py2PyException('Only one "else" clause permitted in '
@@ -109,16 +100,11 @@ class WhileStatement(CompoundStatement):
             self.else_clause.render_to_list(render_list, indent_level)
 
 
-Suite.while_ = lambda self, expression: \
-    self.add(WhileStatement(expression, parent=self))
-
-
 class ForStatement(CompoundStatement):
-    def __init__(self, target_list, in_, parent, render_inline=None):
+    def __init__(self, target_list, in_, parent):
         super(ForStatement, self).__init__(parent)
         self.target_list = target_list
         self.expression_list = in_
-        self.render_inline = render_inline
 
         self.for_clause = Clause(
             'for',
@@ -126,10 +112,12 @@ class ForStatement(CompoundStatement):
             parent=parent,
             proxy_methods={
                 'else_': self.else_
-            },
-            render_inline=render_inline)
+            })
 
         self.else_clause = None
+
+    def get_clause(self) -> Clause:
+        return self.for_clause
 
     def write(self, statement):
         self.for_clause.write(statement)
@@ -137,8 +125,7 @@ class ForStatement(CompoundStatement):
 
     def else_(self):
         if not self.else_clause:
-            self.else_clause = Clause('else', parent=self,
-                                      render_inline=self.render_inline)
+            self.else_clause = Clause('else', parent=self)
             return self.else_clause
         else:
             raise Py2PyException('Only one "else" clause permitted in '
@@ -150,25 +137,22 @@ class ForStatement(CompoundStatement):
             self.else_clause.render_to_list(render_list, indent_level)
 
 
-Suite.for_ = lambda self, target_list, in_: \
-    self.add(ForStatement(target_list, in_, parent=self))
-
-
 class TryStatement(CompoundStatement):
-    def __init__(self, parent, render_inline=None):
+    def __init__(self, parent):
         super(TryStatement, self).__init__(parent)
-        self.render_inline = render_inline
 
         self.try_clause = Clause('try', content='', parent=parent,
                                  proxy_methods={
                                      'else_': self.else_,
                                      'except_': self.except_,
                                      'finally_': self.finally_
-                                 },
-                                 render_inline=render_inline)
+                                 })
         self.except_clauses = []
         self.else_clause = None
         self.finally_clause = None
+
+    def get_clause(self) -> Clause:
+        return self.try_clause
 
     def write(self, statement):
         self.try_clause.write(statement)
@@ -176,8 +160,7 @@ class TryStatement(CompoundStatement):
 
     def else_(self):
         if not self.else_clause:
-            self.else_clause = Clause('else', parent=self,
-                                      render_inline=self.render_inline)
+            self.else_clause = Clause('else', parent=self)
             return self.else_clause
         else:
             raise Py2PyException('Only one "else" clause permitted in '
@@ -187,15 +170,13 @@ class TryStatement(CompoundStatement):
         except_clause = Clause('except', content=expression, parent=self,
                                proxy_methods={
                                    'except_': self.except_
-                               },
-                               render_inline=self.render_inline)
+                               })
         self.except_clauses.append(except_clause)
         return except_clause
     
     def finally_(self):
         if not self.finally_clause:
-            self.finally_clause = Clause('finally', parent=self,
-                                         render_inline=self.render_inline)
+            self.finally_clause = Clause('finally', parent=self)
             return self.finally_clause
         else:
             raise Py2PyException('Only one "finally" clause permitted in '
@@ -214,18 +195,16 @@ class TryStatement(CompoundStatement):
             self.finally_clause.render_to_list(render_list, indent_level)
 
 
-Suite.try_ = lambda self: \
-    self.add(TryStatement(parent=self))
-
-
 class WithStatement(CompoundStatement):
-    def __init__(self, expression, as_=None, parent=None, render_inline=None):
+    def __init__(self, expression, as_=None, parent=None):
         if not parent:
             raise Py2PyException('WithStatement requires a parent')
         super(WithStatement, self).__init__(parent)
         self.items = [(expression, as_)]
-        self.clause = Clause('with', content='', parent=parent,
-                             render_inline=render_inline)
+        self.clause = Clause('with', content='', parent=parent)
+
+    def get_clause(self) -> Clause:
+        return self.clause
 
     def write(self, statement):
         self.clause.write(statement)
@@ -245,21 +224,18 @@ class WithStatement(CompoundStatement):
         self.clause.render_to_list(render_list, indent_level=indent_level)
 
 
-Suite.with_ = lambda self, expression, as_=None: \
-    self.add(WithStatement(expression, as_=as_, parent=self))
-
-
 class DefStatement(CompoundStatement):
-    def __init__(self, name, parameter_list=None, decorators=None, parent=None,
-                 render_inline=None):
+    def __init__(self, name, parameter_list=None, decorators=None, parent=None):
         if not parent:
             raise Py2PyException('Function definition requires parent')
         super(DefStatement, self).__init__(parent)
         self.name = name
         self.parameter_list = parameter_list or []
         self.clause = Clause('def', content='', parent=parent,
-                             decorators=decorators,
-                             render_inline=render_inline)
+                             decorators=decorators)
+
+    def get_clause(self) -> Clause:
+        return self.clause
 
     def write(self, statement):
         self.clause.write(statement)
@@ -272,23 +248,19 @@ class DefStatement(CompoundStatement):
         self.clause.render_to_list(render_list, indent_level=indent_level)
 
 
-Suite.def_ = lambda self, name, parameter_list=None, decorators=None: \
-    self.add(DefStatement(name, parameter_list=parameter_list,
-                          decorators=decorators, parent=self))
-
-
 class ClassStatement(CompoundStatement):
     def __init__(self, name, bases=None, decorators=None,
-                 parent=None,
-                 render_inline=None):
+                 parent=None):
         self.name = name
         self.bases = bases
         if not parent:
             raise Py2PyException('Class definition requires parent')
         super(ClassStatement, self).__init__(parent)
         self.clause = Clause('class', content='', parent=parent,
-                             decorators=decorators,
-                             render_inline=render_inline)
+                             decorators=decorators)
+
+    def get_clause(self) -> Clause:
+        return self.clause
 
     def write(self, statement):
         self.clause.write(statement)
@@ -337,12 +309,6 @@ class ClassStatement(CompoundStatement):
         render_list.append(base.BLOCK_STATEMENT_EOS)
 
 
-Suite.class_ = lambda self, name, bases=None, decorators=None: \
-    self.add(ClassStatement(name, bases=bases,
-                            decorators=decorators,
-                            parent=self))
-
-
 class FunctionCall(Renderable):
     def __init__(self, function_name, *args, **kwargs):
         self.function_name = function_name
@@ -362,7 +328,3 @@ class FunctionCall(Renderable):
             render_list.append(', ')
         render_list.pop()
         render_list.append(')')
-
-
-Suite.call_ = lambda self, function_name, *args, **kwargs: \
-    self.add(FunctionCall(function_name, *args, **kwargs))
