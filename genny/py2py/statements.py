@@ -1,4 +1,7 @@
-from .base import Clause, CompoundStatement, Py2PyException, Renderable, Suite
+from __future__ import annotations
+
+from typing import Union
+from .base import Clause, CompoundStatement, Py2PyException, Renderable
 from . import base
 
 
@@ -8,7 +11,9 @@ class BlankLine(Renderable):
 
 
 class Assign(Renderable):
-    def __init__(self, lhs, rhs):
+    def __init__(self,
+                 lhs: Union[str, Renderable],
+                 rhs: Union[str, Renderable]):
         self.lhs = lhs
         self.rhs = rhs
         super().__init__()
@@ -21,11 +26,11 @@ class Assign(Renderable):
 
 
 class IfStatement(CompoundStatement):
-    def __init__(self, expression, parent):
-        super(IfStatement, self).__init__(parent)
+    def __init__(self, expression):
+        super().__init__()
         self.expression = expression
         self.if_clause = Clause('if', content=expression,
-                                parent=parent,
+                                parent=self,
                                 proxy_methods={
                                     'elif_': self.elif_,
                                     'else_': self.else_
@@ -67,12 +72,12 @@ class IfStatement(CompoundStatement):
 
 
 class WhileStatement(CompoundStatement):
-    def __init__(self, expression, parent):
-        super(WhileStatement, self).__init__(parent)
+    def __init__(self, expression):
+        super().__init__()
         self.expression = expression
 
         self.while_clause = Clause('while', content=expression,
-                                   parent=parent,
+                                   parent=self,
                                    proxy_methods={
                                        'else_': self.else_
                                    })
@@ -101,15 +106,15 @@ class WhileStatement(CompoundStatement):
 
 
 class ForStatement(CompoundStatement):
-    def __init__(self, target_list, in_, parent):
-        super(ForStatement, self).__init__(parent)
+    def __init__(self, target_list, in_):
+        super().__init__()
         self.target_list = target_list
         self.expression_list = in_
 
         self.for_clause = Clause(
             'for',
             content=f'{target_list} in {in_}',
-            parent=parent,
+            parent=self,
             proxy_methods={
                 'else_': self.else_
             })
@@ -138,10 +143,12 @@ class ForStatement(CompoundStatement):
 
 
 class TryStatement(CompoundStatement):
-    def __init__(self, parent):
-        super(TryStatement, self).__init__(parent)
+    def __init__(self):
+        super().__init__()
 
-        self.try_clause = Clause('try', content='', parent=parent,
+        self.try_clause = Clause('try',
+                                 content='',
+                                 parent=self,
                                  proxy_methods={
                                      'else_': self.else_,
                                      'except_': self.except_,
@@ -196,12 +203,10 @@ class TryStatement(CompoundStatement):
 
 
 class WithStatement(CompoundStatement):
-    def __init__(self, expression, as_=None, parent=None):
-        if not parent:
-            raise Py2PyException('WithStatement requires a parent')
-        super(WithStatement, self).__init__(parent)
+    def __init__(self, expression, as_=None):
+        super().__init__()
         self.items = [(expression, as_)]
-        self.clause = Clause('with', content='', parent=parent)
+        self.clause = Clause('with', content='', parent=self)
 
     def get_clause(self) -> Clause:
         return self.clause
@@ -225,13 +230,11 @@ class WithStatement(CompoundStatement):
 
 
 class DefStatement(CompoundStatement):
-    def __init__(self, name, parameter_list=None, decorators=None, parent=None):
-        if not parent:
-            raise Py2PyException('Function definition requires parent')
-        super(DefStatement, self).__init__(parent)
+    def __init__(self, name, parameter_list=None, decorators=None):
+        super().__init__()
         self.name = name
         self.parameter_list = parameter_list or []
-        self.clause = Clause('def', content='', parent=parent,
+        self.clause = Clause('def', content='', parent=self,
                              decorators=decorators)
 
     def get_clause(self) -> Clause:
@@ -249,14 +252,11 @@ class DefStatement(CompoundStatement):
 
 
 class ClassStatement(CompoundStatement):
-    def __init__(self, name, bases=None, decorators=None,
-                 parent=None):
+    def __init__(self, name, bases=None, decorators=None):
         self.name = name
         self.bases = bases
-        if not parent:
-            raise Py2PyException('Class definition requires parent')
-        super(ClassStatement, self).__init__(parent)
-        self.clause = Clause('class', content='', parent=parent,
+        super().__init__()
+        self.clause = Clause('class', content='', parent=self,
                              decorators=decorators)
 
     def get_clause(self) -> Clause:
@@ -295,8 +295,7 @@ class ClassStatement(CompoundStatement):
         return self.add_method_(name, parameter_list, decorators)
 
     def add_method_(self, name, parameter_list, decorators=None):
-        statement = DefStatement(name, parameter_list, decorators,
-                                 parent=self.clause)
+        statement = DefStatement(name, parameter_list, decorators)
         self.write(statement)
         return statement
 
@@ -311,6 +310,7 @@ class ClassStatement(CompoundStatement):
 
 class FunctionCall(Renderable):
     def __init__(self, function_name, *args, **kwargs):
+        super().__init__()
         self.function_name = function_name
         self.args = args
         self.kwargs = kwargs

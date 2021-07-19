@@ -38,8 +38,8 @@ class Renderable:
         self.render_to_list(render_list, indent_level=indent_level)
         return ''.join(render_list)
 
-    def set_parent(self):
-        return self.parent
+    def set_parent(self, parent: Optional[Renderable]):
+        self.parent = parent
 
     def __enter__(self):
         return self
@@ -60,26 +60,25 @@ class SimpleStatement(Renderable):
 
 
 class Clause(Renderable):
-    def __init__(self, keyword: str, content: str = '', proxy_methods=None,
-                 decorators: Optional[List[str]] = None,
-                 parent=None):
+    def __init__(self, keyword: str, parent: Renderable,
+                 content: str = '', proxy_methods=None,
+                 decorators: Optional[List[str]] = None,):
         self.decorators: Optional[List[str]] = decorators or []
         self.header = ClauseHeader(keyword, content=content)
-        self.suite = Suite(parent=parent, proxy_methods=proxy_methods)
-        self.proxy_methods = proxy_methods
+        self.suite = Suite(proxy_methods=proxy_methods)
+        self.proxy_methods = proxy_methods or {}
         super().__init__(parent)
         
     def __getattr__(self, item):
-        if self.proxy_methods:
-            try:
-                return self.proxy_methods[item]
-            except KeyError:
-                raise AttributeError()
+        attr = self.proxy_methods.get(item)
+        if attr:
+            return attr
+        return getattr(self.suite, item)
 
     def dedent(self):
         return self.parent
 
-    def write(self, statement: Statement):
+    def write(self, statement: Renderable):
         return self.suite.write(statement)
 
     @staticmethod
@@ -117,8 +116,8 @@ class ClauseHeader(Renderable):
 
 
 class CompoundStatement(Renderable):
-    def __init__(self, parent: Renderable):
-        super().__init__(parent)
+    def __init__(self):
+        super().__init__()
 
     def dedent(self):
         return self.parent
@@ -137,17 +136,13 @@ class CompoundStatement(Renderable):
                                   'all compound statements')
 
 
-Statement = Union[CompoundStatement, SimpleStatement]
-
-
 class Suite(Renderable):
     def __init__(self, pass_if_empty: bool = True,
-                 parent: Optional[Renderable] = None,
                  proxy_methods=None):
         self.statements = []
         self.pass_if_empty = pass_if_empty
         self.proxy_methods = proxy_methods
-        super().__init__(parent)
+        super().__init__()
 
     def __getattr__(self, item):
         if self.proxy_methods:
@@ -157,15 +152,16 @@ class Suite(Renderable):
                 pass
         raise AttributeError(item)
 
-    def write(self, statement: Statement):
+    def write(self, statement: Renderable):
         self.add(statement)
         return self
 
-    def add(self, statement: Union[str, Statement]):
+    def add(self, statement: Union[str, Renderable]):
         if isinstance(statement, str):
             statement = SimpleStatement(statement)
 
         self.statements.append(statement)
+        statement.set_parent(self)
         return statement
 
     def clear(self):
@@ -193,37 +189,38 @@ class Suite(Renderable):
     def def_(self, name, parameter_list=None,
              decorators=None) -> statements.DefStatement:
         from .statements import DefStatement
-        statement = DefStatement(name, parameter_list, decorators, parent=self)
+        statement = DefStatement(name, parameter_list, decorators)
         self.add(statement)
         return statement
 
     def for_(self, target_list, in_) -> statements.ForStatement:
         from .statements import ForStatement
-        statement = ForStatement(target_list, in_, parent=self)
+        statement = ForStatement(target_list, in_)
         self.add(statement)
         return statement
 
     def if_(self, expression) -> statements.IfStatement:
         from .statements import IfStatement
-        statement = IfStatement(expression, parent=self)
+        statement = IfStatement(expression)
         self.add(statement)
         return statement
 
     def try_(self) -> statements.TryStatement:
         from .statements import TryStatement
-        statement = TryStatement(parent=self)
+        statement = TryStatement()
         self.add(statement)
         return statement
 
     def while_(self, expression) -> statements.WhileStatement:
         from .statements import WhileStatement
-        statement = WhileStatement(expression, parent=self)
+        statement = WhileStatement(expression)
         self.add(statement)
         return statement
 
     def with_(self, expression, as_) -> statements.WithStatement:
         from .statements import WithStatement
-        statement = WithStatement(expression, as_, parent=self)
+        statement = WithStatement(expression, as_)
+        self.add(statement)
         return statement
 
     def render_to_list(self, render_list, indent_level):
@@ -233,11 +230,6 @@ class Suite(Renderable):
 
         for statement in self.statements:
             statement.render_to_list(render_list, indent_level)
-
-
-class SimpleAssignmentStatement(SimpleStatement):
-    def __init__(self, lhs: str, rhs: str):
-        super().__init__(f'{lhs} = {rhs}')
 
 
 def do_indent(text: str, indent_level: int):
